@@ -57,10 +57,14 @@ export default function ProfilePage() {
   const saveName = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      if (!token) throw new Error('No autenticado');
+      const userData = localStorage.getItem('userData');
+      if (!token || !userData) throw new Error('No autenticado');
+      
+      const user = JSON.parse(userData);
+      const userId = user.id;
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/usuario`,
+        `https://hobbyconnect-production.up.railway.app/usuario/${userId}`,
         {
           method: 'PATCH',
           headers: {
@@ -77,10 +81,11 @@ export default function ProfilePage() {
 
       setNombre(draftName);
       // Actualizar localStorage con el nuevo nombre
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      userData.nombre = draftName;
-      localStorage.setItem('userData', JSON.stringify(userData));
+      const updatedUserData = JSON.parse(localStorage.getItem('userData') || '{}');
+      updatedUserData.nombre = draftName;
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
       setIsNameModalOpen(false);
+      alert('Nombre actualizado con éxito');
     } catch (err) {
       const error = err as Error;
       console.error(error);
@@ -146,13 +151,43 @@ export default function ProfilePage() {
     setIsAboutModalOpen(true);
   };
   const closeAboutModal = () => setIsAboutModalOpen(false);
-  const saveAbout = () => {
-    setSobreMi(draftAbout);
-    // Actualizar localStorage con la nueva descripción
-    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    userData.descripcion = draftAbout;
-    localStorage.setItem('userData', JSON.stringify(userData));
-    setIsAboutModalOpen(false);
+  const saveAbout = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const userData = localStorage.getItem('userData');
+      if (!token || !userData) throw new Error('No autenticado');
+      
+      const user = JSON.parse(userData);
+      const userId = user.id;
+
+      const response = await fetch(
+        `https://hobbyconnect-production.up.railway.app/usuario/${userId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ descripcion: draftAbout }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar la descripción');
+      }
+
+      setSobreMi(draftAbout);
+      // Actualizar localStorage con la nueva descripción
+      const updatedUserData = JSON.parse(localStorage.getItem('userData') || '{}');
+      updatedUserData.descripcion = draftAbout;
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      setIsAboutModalOpen(false);
+      alert('Descripción actualizada con éxito');
+    } catch (err) {
+      const error = err as Error;
+      console.error(error);
+      alert(error.message || 'Error al actualizar la descripción');
+    }
   };
 
   return (
